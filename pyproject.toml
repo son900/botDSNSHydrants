@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "botDSNSHydrants"
+version = "0.1.0"
+description = "Bot for DSNS Dnipro"
+authors = ["Bogdan Rozhnyatovskiy <bogdan24ro@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "3.11.5"
+django = "4.2.4"
+redis = "^4.5.1"
+pillow = "^9.5.0"
+django-environ = "^0.10.0"
+psycopg2-binary = "^2.9.6"
+django-debug-toolbar = "^4.1.0"
+celery = "^5.2.7"
+django-redis = "^5.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+locust = "^2.14.2"
+flake8 = "^6.0.0"
+flake8-isort = "^6.0.0"
+flake8-docstrings = "^1.7.0"
+flake8-import-order = "^0.18.2"
+flake8-quotes = "^3.3.2"
+black = "^22.12.0"
+flake8-pyproject = "^1.1.0.post0"
+autoflake = "^1.7.6"
+coverage = "^7.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
