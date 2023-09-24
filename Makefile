@@ -4,12 +4,14 @@ MANAGE = python manage.py
 
 # BASE COMMANDS
 run:
+	$(MANAGE) init_project
 	$(MANAGE) runserver
 
 
 run-local:
 	$(MANAGE) migrate
 	$(MANAGE) collectstatic --noinput
+	$(MANAGE) init_project
 	$(MANAGE) runserver
 
 
