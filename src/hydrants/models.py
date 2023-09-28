@@ -108,7 +108,7 @@ class Hydrant(models.Model):
     )
     address = models.CharField(max_length=1024, verbose_name="Прив'язка до адреси")
     description = models.TextField(verbose_name="Опис")
-    coordinates = models.CharField(max_length=256, verbose_name="Координати розташування")
+    coordinates = models.CharField(max_length=256, unique=True, verbose_name="Координати розташування")
 
     owner = models.ForeignKey(
         "Owner",

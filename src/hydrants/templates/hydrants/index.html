@@ -1,0 +1,22 @@
+{% extends 'elements/base.html' %}
+{% load static %}
+
+{% block title %}
+    Hydrants import
+{% endblock title %}
+
+{% block content %}
+    <div class="mb-3">
+    <form method="POST" action="{% url "hydrants:import" %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="formFile" class="form-label">
+            Завантажте xlsx таблицю з гідрантами!
+        </label>
+        {{ import_form.file }}
+        <button type="submit">OK</button>
+    </form>
+    </div>
+
+{% endblock content %}
+
+
