@@ -13,6 +13,8 @@ env = environ.Env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
+
 # Read env file
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=True)
 ENV_PATH = env.str("DJANGO_ENV_PATH", default=".env")

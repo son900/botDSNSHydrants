@@ -2,6 +2,7 @@
 """
 Module for the management command 'init_project'.
 """
+import os
 
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand
@@ -35,4 +36,13 @@ class Command(BaseCommand):
         )
         user.set_password(settings.SUPERUSER_PASSWORD)
         user.save()
+
+    @staticmethod
+    def _import_hydrants():
+        """
+        Import hydrants.
+        """
+        file_path = os.path.join(settings.SAMPLES_DIR, "")
+
+
 
