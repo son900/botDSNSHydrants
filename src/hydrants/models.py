@@ -31,7 +31,7 @@ class TypeWaterNetworkChoices(models.TextChoices):
     Choices for type water network.
     """
     K = "K", "K",
-    T = "T", "K"
+    T = "T", "T"
 
 
 class TypeDiameterChoices(models.IntegerChoices):
@@ -110,12 +110,15 @@ class Hydrant(models.Model):
     description = models.TextField(verbose_name="Опис")
     coordinates = models.CharField(max_length=256, unique=True, verbose_name="Координати розташування")
 
+    image = models.ImageField(verbose_name="Фото", upload_to="hydrants/images/", blank=True, null=True)
+
     owner = models.ForeignKey(
         "Owner",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="hydrants"
+        related_name="hydrants",
+        verbose_name="Балансоутримувач"
     )
 
     subdivision = models.ForeignKey(
@@ -123,7 +126,8 @@ class Hydrant(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="subdivision_hydrants"
+        related_name="subdivision_hydrants",
+        verbose_name="Підрозділ"
     )
 
     class Meta:
@@ -134,12 +138,22 @@ class Hydrant(models.Model):
         verbose_name = "Гідрант"
         verbose_name_plural = "Гідрант"
 
+    def __str__(self):
+        """
+        Representation str object.
+        """
+        return self.address
+
 
 class Subdivision(models.Model):
     """
     Model for subdivisions
     """
-    name = models.CharField(max_length=256, verbose_name="Назва підрозділу")
+    name = models.CharField(
+        unique=True,
+        max_length=256,
+        verbose_name="Назва підрозділу"
+    )
 
     class Meta:
         """
@@ -149,12 +163,22 @@ class Subdivision(models.Model):
         verbose_name = "Підрозділ"
         verbose_name_plural = "Підрозділ"
 
+    def __str__(self):
+        """
+        Representation str object.
+        """
+        return self.name
+
 
 class Owner(models.Model):
     """
     Model for owner hydrants
     """
-    name = models.CharField(max_length=256, verbose_name="Назва балансоутримувача")
+    name = models.CharField(
+        unique=True,
+        max_length=256,
+        verbose_name="Назва балансоутримувача"
+    )
 
     class Meta:
         """
@@ -163,4 +187,10 @@ class Owner(models.Model):
 
         verbose_name = "Балансоутримувач"
         verbose_name_plural = "Балансоутримувач"
+
+    def __str__(self):
+        """
+        Representation str object.
+        """
+        return self.name
 

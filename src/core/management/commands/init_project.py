@@ -2,12 +2,15 @@
 """
 Module for the management command 'init_project'.
 """
-import os
+import asyncio
 
+from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand
+from aiogram import Bot
 
 from config import settings
+from src.hydrants.dependencies import get_hydrants_import_service
 
 
 class Command(BaseCommand):
@@ -20,6 +23,8 @@ class Command(BaseCommand):
         Handle command.
         """
         self._create_superuser()
+        # self._import_hydrants()
+        async_to_sync(self.set_webhook)()
 
     @staticmethod
     def _create_superuser():
@@ -42,7 +47,22 @@ class Command(BaseCommand):
         """
         Import hydrants.
         """
-        file_path = os.path.join(settings.SAMPLES_DIR, "")
+        # get hydrants import service
+        hydrants_import_service = get_hydrants_import_service()
 
+        # start import
+        hydrants_import_service.start_import()
 
+    @staticmethod
+    async def set_webhook():
+        """
+        Check and set new webhook.
+        """
+        # get webhook url
+        webhook_url: str = settings.WEBHOOK_URL
+        bot = Bot(token=settings.API_TOKEN)
+        webhook_info = await bot.get_webhook_info()
 
+        if webhook_info.url != webhook_url:
+            await bot.set_webhook(url=webhook_url)
+        await bot.session.close()

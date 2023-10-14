@@ -3,10 +3,13 @@
 Hydrants import service.
 """
 import logging
+import os
 from typing import Type
 
+from django.core.exceptions import ObjectDoesNotExist
 from openpyxl.worksheet import worksheet
 
+from config import settings
 from src.core.services.base_service import BaseImportService
 from src.hydrants.models import Hydrant, Subdivision, Owner
 
@@ -35,14 +38,44 @@ class HydrantsImportService(BaseImportService):
         self.subdivision_model = subdivision_model
         self.owner_model = owner_model
 
-    def read_data(
-        self,
+    def start_import(self):
+        """
+        Start import process.
+        """
+        # get file path (file with hydrants.xlsx)
+        file_path = os.path.join(settings.SAMPLES_DIR, "hydrants.xlsx")
+
+        with open(file_path, "rb") as file:
+            # get sheet
+            sheet = self.get_sheet(file.read())
+
+        # get data in sheet
+        data = self._read_data(sheet)
+
+        # create hydrants
+        self._bulk_create_hydrants(
+            hydrants_list=data[0]
+        )
+
+        # set relationship for hydrants
+        self._set_relationship_for_hydrants(
+            relationship_list=data[3],
+            subdivisions_list=data[2],
+            owners_list=data[1]
+        )
+
+    @staticmethod
+    def _read_data(
         sheet: worksheet,
-    ):
+    ) -> tuple[list, list, list, list]:
         """
         Read the file with categories data.
         """
-        hydrants_list = []
+        hydrants_list: list = []
+        owners_list: list = []
+        subdivisions_list: list = []
+        relationship_list: list = []
+
         for row in sheet.iter_rows(min_row=2, values_only=True):
             if all(cell is None for cell in row):
                 continue
@@ -60,18 +93,35 @@ class HydrantsImportService(BaseImportService):
                     "coordinates": row[9]
                 }
             )
-        return hydrants_list
+            if row[3]:
+                owners_list.append(
+                    {
+                        "name": row[3]
+                    }
+                )
+            if row[4]:
+                subdivisions_list.append(
+                    {
+                        "name": row[4]
+                    }
+                )
+            relationship_list.append(
+                {
+                    "coordinates": row[9],
+                    "owner_name": row[3],
+                    "subdivision_name": row[4],
+                },
+            )
 
-    def bulk_create_or_update_hydrants(
-            self,
-            hydrants_list: list,
+        return hydrants_list, owners_list, subdivisions_list, relationship_list
+
+    def _bulk_create_hydrants(
+        self,
+        hydrants_list: list,
     ) -> None:
         """
-        Bulk create or update hydrants.
+        Bulk create hydrants.
         """
-        # get all hydrants
-        countries = self.hydrant_model.objects.all()
-
         # create bulk list from hydrant classes
         bulk_list = [
             self.hydrant_model(
@@ -87,28 +137,92 @@ class HydrantsImportService(BaseImportService):
             for hydrant in hydrants_list
         ]
 
-        # bulk create and update hydrants
-        # self.hydrant_model.objects.bulk_create(
-        #     bulk_list,
-        #     update_conflicts=True,
-        #     unique_fields=["coordinates"],
-        #     update_fields=[
-        #         "technical_condition",
-        #         "type_hydrant",
-        #         "type_location",
-        #         "type_water_network",
-        #         "type_diameter",
-        #         "address",
-        #         "description",
-        #     ],
-        # )
-
         self.hydrant_model.objects.bulk_create(
             bulk_list,
             ignore_conflicts=True,
-
         )
 
+    def _bulk_create_owners(
+        self,
+        owners_list: list,
+    ) -> None:
+        """
+        Bulk create owners.
+        """
+        # create bulk list from owner classes
+        bulk_list = [
+            self.owner_model(
+                name=owner.get("name"),
+            )
+            for owner in owners_list
+        ]
 
+        self.owner_model.objects.bulk_create(
+            bulk_list,
+            ignore_conflicts=True,
+        )
+
+    def _bulk_create_subdivisions(
+        self,
+        subdivisions_list: list,
+    ) -> None:
+        """
+        Bulk create subdivisions.
+        """
+        # create bulk list from subdivisions classes
+        bulk_list = [
+            self.subdivision_model(
+                name=subdivision.get("name"),
+            )
+            for subdivision in subdivisions_list
+        ]
+
+        self.subdivision_model.objects.bulk_create(
+            bulk_list,
+            ignore_conflicts=True,
+        )
+
+    def _set_relationship_for_hydrants(
+            self,
+            relationship_list: list,
+            subdivisions_list: list,
+            owners_list: list,
+    ) -> None:
+        """
+        Set a relationship between owner, subdivision and hydrants.
+        """
+        # bulk create tags
+        self._bulk_create_owners(
+            owners_list=owners_list,
+        )
+        # bulk create keys
+        self._bulk_create_subdivisions(
+            subdivisions_list=subdivisions_list,
+        )
+
+        # get hydrant by coordinates and set owner and subdivision relationship
+        for hydrant in relationship_list:
+            coordinates = hydrant.get("coordinates")
+            owner_name = hydrant.get("owner_name")
+            subdivision_name = hydrant.get("subdivision_name")
+            try:
+                obj = self.hydrant_model.objects.get(
+                    coordinates=coordinates,
+                )
+                # set owner to hydrant object
+                owner = self.owner_model.objects.filter(name=owner_name)
+                if owner.exists():
+                    obj.owner = owner.first()
+
+                # set subdivision to hydrant object
+                subdivision = self.subdivision_model.objects.filter(name=subdivision_name)
+                if subdivision.exists():
+                    obj.subdivision = subdivision.first()
+
+                # save object
+                obj.save()
+
+            except ObjectDoesNotExist:
+                continue
 
 
