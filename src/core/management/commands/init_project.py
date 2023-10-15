@@ -8,7 +8,7 @@ from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand
 from aiogram import Bot
-
+from src.hydrants.models import Hydrant
 from config import settings
 from src.hydrants.dependencies import get_hydrants_import_service
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         Handle command.
         """
         self._create_superuser()
-        # self._import_hydrants()
+        self._import_hydrants()
         async_to_sync(self.set_webhook)()
 
     @staticmethod
@@ -47,11 +47,12 @@ class Command(BaseCommand):
         """
         Import hydrants.
         """
-        # get hydrants import service
-        hydrants_import_service = get_hydrants_import_service()
+        if not Hydrant.objects.all().exists():
+            # get hydrants import service
+            hydrants_import_service = get_hydrants_import_service()
 
-        # start import
-        hydrants_import_service.start_import()
+            # start import
+            hydrants_import_service.start_import()
 
     @staticmethod
     async def set_webhook():

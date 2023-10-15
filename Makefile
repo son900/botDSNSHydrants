@@ -12,7 +12,7 @@ run-local:
 	$(MANAGE) migrate
 	$(MANAGE) collectstatic --noinput
 	$(MANAGE) init_project
-	$(MANAGE) runserver
+	python manage.py runserver 0.0.0.0:8000
 
 
 # DB
@@ -28,5 +28,13 @@ reset:
 mm:
 	$(MANAGE) makemigrations
 	$(MANAGE) migrate
+
+
+# Docker
+local_up:
+	sudo docker compose up --build
+
+local_down:
+	sudo docker compose down
 
 

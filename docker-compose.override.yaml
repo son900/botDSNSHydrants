@@ -1,0 +1,33 @@
+version: "3.3"
+
+services:
+
+  postgres_db:
+    env_file:
+      - local.env
+
+  nginx:
+    build:
+      context: ./deploy/nginx
+      dockerfile: local.Dockerfile
+    container_name: hydrants_bot_nginx
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+    restart: "on-failure"
+
+  backend:
+    env_file:
+      - local.env
+    volumes:
+      - .:/app:rw
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+    ports:
+      - "8000:8000"
+    command: poetry run make run-local
+    restart: always

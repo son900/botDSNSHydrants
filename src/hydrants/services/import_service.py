@@ -2,8 +2,10 @@
 """
 Hydrants import service.
 """
+import decimal
 import logging
 import os
+import re
 from typing import Type
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -26,10 +28,10 @@ class HydrantsImportService(BaseImportService):
     owner_model: Type[Owner]
 
     def __init__(
-        self,
-        hydrant_model: Type[Hydrant],
-        subdivision_model: Type[Subdivision],
-        owner_model: Type[Owner],
+            self,
+            hydrant_model: Type[Hydrant],
+            subdivision_model: Type[Subdivision],
+            owner_model: Type[Owner],
     ):
         """
         Set models for import service.
@@ -66,7 +68,7 @@ class HydrantsImportService(BaseImportService):
 
     @staticmethod
     def _read_data(
-        sheet: worksheet,
+            sheet: worksheet,
     ) -> tuple[list, list, list, list]:
         """
         Read the file with categories data.
@@ -81,6 +83,21 @@ class HydrantsImportService(BaseImportService):
                 continue
             if row[9] is None:
                 continue
+            # TODO Temporary solution (waiting for changes in the table)
+            latitude = None
+            longitude = None
+            try:
+
+                list_coordinates = row[9].split(", ")
+                if (
+                        re.match(r"^\d{1,3}\.\d{5,6}$", list_coordinates[0]) and
+                        re.match(r"^\d{1,3}\.\d{5,6}$", list_coordinates[1])
+                ):
+                    latitude = decimal.Decimal(list_coordinates[0])
+                    longitude = decimal.Decimal(list_coordinates[1])
+            except Exception as exc:
+                logger.info(str(exc))
+
             hydrants_list.append(
                 {
                     "technical_condition": row[0],
@@ -90,7 +107,9 @@ class HydrantsImportService(BaseImportService):
                     "type_water_network": row[6],
                     "type_diameter": row[7],
                     "description": row[8],
-                    "coordinates": row[9]
+                    "coordinates": row[9],
+                    "latitude": latitude,
+                    "longitude": longitude
                 }
             )
             if row[3]:
@@ -116,8 +135,8 @@ class HydrantsImportService(BaseImportService):
         return hydrants_list, owners_list, subdivisions_list, relationship_list
 
     def _bulk_create_hydrants(
-        self,
-        hydrants_list: list,
+            self,
+            hydrants_list: list,
     ) -> None:
         """
         Bulk create hydrants.
@@ -132,7 +151,9 @@ class HydrantsImportService(BaseImportService):
                 type_diameter=hydrant.get("type_diameter"),
                 address=hydrant.get("address"),
                 description=hydrant.get("description"),
-                coordinates=hydrant.get("coordinates")
+                coordinates=hydrant.get("coordinates"),
+                latitude=hydrant.get("latitude"),
+                longitude=hydrant.get("longitude")
             )
             for hydrant in hydrants_list
         ]
@@ -143,8 +164,8 @@ class HydrantsImportService(BaseImportService):
         )
 
     def _bulk_create_owners(
-        self,
-        owners_list: list,
+            self,
+            owners_list: list,
     ) -> None:
         """
         Bulk create owners.
@@ -163,8 +184,8 @@ class HydrantsImportService(BaseImportService):
         )
 
     def _bulk_create_subdivisions(
-        self,
-        subdivisions_list: list,
+            self,
+            subdivisions_list: list,
     ) -> None:
         """
         Bulk create subdivisions.
@@ -224,5 +245,3 @@ class HydrantsImportService(BaseImportService):
 
             except ObjectDoesNotExist:
                 continue
-
-

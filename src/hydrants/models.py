@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class TechnicalConditionChoices(models.TextChoices):
     """
     Choices for technical condition.
@@ -109,6 +108,8 @@ class Hydrant(models.Model):
     address = models.CharField(max_length=1024, verbose_name="Прив'язка до адреси")
     description = models.TextField(verbose_name="Опис")
     coordinates = models.CharField(max_length=256, unique=True, verbose_name="Координати розташування")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
 
     image = models.ImageField(verbose_name="Фото", upload_to="hydrants/images/", blank=True, null=True)
 
